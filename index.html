@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Raccoon Team HQ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;color:#1a1a1a;min-height:100vh;}
+#root{max-width:700px;margin:0 auto;padding:2rem 1rem;}
+#app{padding:1rem 0;}
+.tab-bar{display:flex;gap:8px;margin-bottom:1.5rem;}
+.tab-btn{flex:1;padding:10px;border:1px solid #d0cfc8;border-radius:8px;background:#fff;color:#666;font-size:14px;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.tab-btn:hover{background:#f0efe8;transform:translateY(-1px);}
+.tab-btn.active{background:#E8F5E9;color:#2E7D32;border-color:#A5D6A7;font-weight:500;}
+.section{display:none;}.section.active{display:block;}
+.day-nav{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;}
+.day-pill{padding:6px 13px;border-radius:999px;border:1px solid #d0cfc8;background:#f0efe8;color:#666;font-size:13px;cursor:pointer;font-family:inherit;transition:all 0.18s;}
+.day-pill:hover{transform:translateY(-2px);box-shadow:0 3px 8px rgba(0,0,0,0.1);}
+.day-pill.active{background:#C8E6C9;color:#2E7D32;border-color:#A5D6A7;font-weight:500;transform:translateY(-2px);}
+.fact-card{position:relative;overflow:hidden;border:1px solid #d0cfc8;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:1rem;transition:opacity 0.28s,transform 0.28s;background:#fff;}
+.fact-card.fade-out{opacity:0;transform:translateY(6px);}
+.scene-wrap{width:100%;position:relative;height:320px;cursor:crosshair;}
+.scene-wrap svg{width:100%;height:100%;display:block;}
+.hint-badge{position:absolute;bottom:10px;right:12px;background:rgba(0,0,0,0.35);color:white;font-size:11px;padding:4px 9px;border-radius:999px;pointer-events:none;letter-spacing:0.03em;opacity:0.85;z-index:2;}
+.fact-bottom{padding:0 1.5rem 1.5rem;display:flex;flex-direction:column;align-items:center;gap:.75rem;width:100%;}
+.fact-label{font-size:12px;color:#999;text-transform:uppercase;letter-spacing:.06em;}
+.fact-raccoon-name{font-size:20px;font-weight:500;color:#2E7D32;}
+.fact-text{font-size:15px;color:#1a1a1a;line-height:1.7;text-align:center;max-width:500px;}
+.nav-btns{display:flex;gap:8px;margin-top:1rem;justify-content:center;}
+.nav-btn{padding:9px 24px;border:1px solid #d0cfc8;border-radius:8px;background:#fff;color:#1a1a1a;font-size:14px;cursor:pointer;font-family:inherit;transition:all 0.18s;}
+.nav-btn:hover:not(:disabled){background:#f0efe8;transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,0.08);}
+.nav-btn:active:not(:disabled){transform:translateY(0);}
+.nav-btn:disabled{opacity:0.3;cursor:default;}
+.builder-card{background:#fff;border:1px solid #d0cfc8;border-radius:12px;padding:1.5rem;}
+.builder-row{display:flex;gap:8px;margin-bottom:1rem;}
+.builder-input{flex:1;padding:10px 14px;border:1px solid #d0cfc8;border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:#1a1a1a;transition:border-color 0.2s,box-shadow 0.2s;}
+.builder-input:focus{outline:none;border-color:#A5D6A7;box-shadow:0 0 0 3px rgba(165,214,167,0.3);}
+.builder-btn{padding:10px 22px;border:1px solid #A5D6A7;border-radius:8px;background:#E8F5E9;color:#2E7D32;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:all 0.18s;}
+.builder-btn:hover{background:#C8E6C9;transform:translateY(-2px);box-shadow:0 4px 10px rgba(46,125,50,0.15);}
+.builder-btn:active{transform:translateY(0);}
+.result-area{display:none;flex-direction:column;align-items:center;gap:1rem;text-align:center;padding-top:1rem;border-top:1px solid #e8e7e0;margin-top:1rem;opacity:0;transform:translateY(12px);transition:opacity 0.4s,transform 0.4s;}
+.result-area.show{display:flex;}.result-area.animate{opacity:1;transform:translateY(0);}
+.raccoon-result-name{font-size:22px;font-weight:500;color:#2E7D32;}
+.raccoon-result-title{font-size:14px;color:#666;}
+.result-scene{width:100%;max-width:400px;height:240px;cursor:crosshair;position:relative;}
+.result-scene svg{width:100%;height:100%;display:block;}
+.raccoon-fun-fact{font-size:14px;color:#666;max-width:420px;line-height:1.6;background:#f0efe8;border-radius:8px;padding:.75rem 1rem;}
+
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes tailWag{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(14deg)}}
+@keyframes blink{0%,85%,100%{transform:scaleY(1)}91%{transform:scaleY(0.05)}}
+@keyframes legL{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(8deg)}}
+@keyframes legR{0%,100%{transform:rotate(8deg)}50%{transform:rotate(-10deg)}}
+@keyframes armL{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-22deg)}}
+@keyframes armR{0%,100%{transform:rotate(0deg)}50%{transform:rotate(22deg)}}
+@keyframes cloud{0%{transform:translateX(0)}100%{transform:translateX(40px)}}
+@keyframes sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes earTwitch{0%,80%,100%{transform:rotate(0deg)}88%{transform:rotate(-12deg)}}
+@keyframes sparkle{0%{opacity:1;transform:scale(1) translate(0,0)}100%{opacity:0;transform:scale(0) translate(var(--sx),var(--sy))}}
+@keyframes ripple{0%{r:4;opacity:0.8}100%{r:28;opacity:0}}
+@keyframes sniffSniff{0%,100%{transform:translateY(0)}40%,60%{transform:translateY(2px)}}
+</style>
+</head>
+<body>
+<div id="root">
+<div id="app">
+  <h2 style="font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:.25rem;">🦝 Raccoon Team HQ</h2>
+  <p style="font-size:14px;color:#666;margin-bottom:1.25rem;">7 trash panda facts + your personal raccoon identity</p>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('facts')">Daily Raccoon Facts</button>
+    <button class="tab-btn" onclick="switchTab('builder')">Raccoon Name Builder</button>
+  </div>
+  <div id="facts" class="section active">
+    <div class="day-nav" id="dayNav"></div>
+    <div class="fact-card" id="factCard">
+      <div class="scene-wrap" id="sceneWrap">
+        <span class="hint-badge">Click anywhere to levitate! 🦝</span>
+      </div>
+      <div class="fact-bottom">
+        <div class="fact-label" id="factDate"></div>
+        <div class="fact-raccoon-name" id="factRaccoonName"></div>
+        <div class="fact-text" id="factText"></div>
+      </div>
+    </div>
+    <div class="nav-btns">
+      <button class="nav-btn" id="prevBtn" onclick="changeDay(-1)">← Previous</button>
+      <button class="nav-btn" id="nextBtn" onclick="changeDay(1)">Next →</button>
+    </div>
+  </div>
+  <div id="builder" class="section">
+    <div class="builder-card">
+      <p style="font-size:15px;color:#1a1a1a;margin-bottom:1rem;line-height:1.6;">Enter your name to discover your raccoon alter ego!</p>
+      <div class="builder-row">
+        <input class="builder-input" id="nameInput" placeholder="Your name..." maxlength="30" onkeydown="if(event.key==='Enter')buildRaccoon()"/>
+        <button class="builder-btn" onclick="buildRaccoon()">Generate 🦝</button>
+      </div>
+      <div class="result-area" id="resultArea">
+        <div class="raccoon-result-name" id="resultName"></div>
+        <div class="raccoon-result-title" id="resultTitle"></div>
+        <div class="result-scene" id="resultScene"></div>
+        <div class="raccoon-fun-fact" id="resultFact"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+/* ── PHYSICS ── */
+const physics={};
+function initPhysics(id){physics[id]={x:300,y:160,vx:0,vy:0,tx:300,ty:160,floating:false,bobT:0,bobOffset:0,shadowScale:1};}
+function getPhysics(id){if(!physics[id])initPhysics(id);return physics[id];}
+const rafLoops={};
+function startLoop(id,svgEl){
+  if(rafLoops[id])cancelAnimationFrame(rafLoops[id]);
+  function tick(){
+    const p=getPhysics(id);
+    if(p.floating){
+      const dx=p.tx-p.x,dy=p.ty-p.y;
+      p.vx=(p.vx+dx*0.07)*0.78; p.vy=(p.vy+dy*0.07)*0.78;
+      p.x+=p.vx; p.y+=p.vy;
+      p.bobT+=0.04; p.bobOffset=Math.sin(p.bobT)*7;
+      const lift=Math.max(0,160-p.y);
+      p.shadowScale=Math.max(0.2,1-lift/180);
+      if(Math.abs(dx)<0.3&&Math.abs(dy)<0.3&&Math.abs(p.vx)<0.1&&Math.abs(p.vy)<0.1)p.floating=false;
+    } else {p.bobOffset=0;p.shadowScale=1;}
+    applyTransform(id,svgEl,p);
+    rafLoops[id]=requestAnimationFrame(tick);
+  }
+  tick();
+}
+function applyTransform(id,svgEl,p){
+  const g=svgEl.querySelector('.raccoon-root');
+  const sh=svgEl.querySelector('.raccoon-shadow');
+  if(!g)return;
+  if(p.floating){
+    g.style.animation='none';
+    g.style.transform=`translate(${p.x-300}px,${p.y-160+p.bobOffset}px)`;
+    g.style.transformOrigin='300px 160px';
+    if(sh){sh.style.transform=`scaleX(${p.shadowScale})`;sh.style.transformOrigin='300px 220px';sh.style.opacity=p.shadowScale*0.13;}
+  } else {
+    g.style.animation=''; g.style.transform='';
+    if(sh){sh.style.transform='';sh.style.opacity='';}
+  }
+}
+function handleClick(e,id,svgEl){
+  const r=svgEl.getBoundingClientRect();
+  const cx=(e.clientX-r.left)*(600/r.width), cy=(e.clientY-r.top)*(320/r.height);
+  const p=getPhysics(id);
+  p.floating=true; p.tx=cx; p.ty=cy;
+  spawnSparkles(svgEl,cx,cy); spawnRipple(svgEl,cx,cy);
+}
+function spawnSparkles(svgEl,cx,cy){
+  const ns='http://www.w3.org/2000/svg';
+  const cols=['#FFD700','#FF9800','#9C27B0','#4CAF50','#F48FB1','#80DEEA','#FF5722'];
+  for(let i=0;i<10;i++){
+    const a=(Math.PI*2*i/10)+Math.random()*0.5, d=30+Math.random()*50;
+    const sx=Math.cos(a)*d, sy=Math.sin(a)*d;
+    const s=document.createElementNS(ns,'polygon');
+    const r=4+Math.random()*5;
+    const pts=Array.from({length:5},(_,k)=>{const ang=(k*4*Math.PI/5)-Math.PI/2;const ri=k%2===0?r:r*0.45;return`${cx+Math.cos(ang)*ri},${cy+Math.sin(ang)*ri}`;}).join(' ');
+    s.setAttribute('points',pts); s.setAttribute('fill',cols[i%cols.length]);
+    s.style.cssText=`--sx:${sx}px;--sy:${sy}px;animation:sparkle 0.6s ease-out forwards;transform-origin:${cx}px ${cy}px;`;
+    svgEl.appendChild(s); setTimeout(()=>s.remove(),700);
+  }
+}
+function spawnRipple(svgEl,cx,cy){
+  const ns='http://www.w3.org/2000/svg';
+  const c=document.createElementNS(ns,'circle');
+  c.setAttribute('cx',cx);c.setAttribute('cy',cy);c.setAttribute('r','4');
+  c.setAttribute('fill','none');c.setAttribute('stroke','rgba(255,255,255,0.8)');c.setAttribute('stroke-width','2.5');
+  c.style.cssText='animation:ripple 0.5s ease-out forwards;';
+  svgEl.appendChild(c); setTimeout(()=>c.remove(),600);
+}
+function attachPhysics(wrapEl,id){
+  initPhysics(id);
+  wrapEl.addEventListener('click',e=>{
+    const svgEl=wrapEl.querySelector('svg'); if(!svgEl)return;
+    handleClick(e,id,svgEl); startLoop(id,svgEl);
+  });
+}
+
+/* ── SCENE BUILDER ── */
+function scene(skyTop,skyBot,groundCol,raccoonSVG,sceneId){
+  return`<svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" id="svg-${sceneId}">
+  <!-- sky -->
+  <rect width="600" height="230" fill="${skyTop}"/>
+  <rect y="200" width="600" height="120" fill="${groundCol}"/>
+  <rect y="192" width="600" height="22" fill="${skyBot}" opacity="0.35"/>
+  <!-- moon/sun -->
+  <circle cx="520" cy="62" r="36" fill="${skyBot}" opacity="0.9"/>
+  <!-- stars (night scenes) -->
+  <circle cx="80" cy="40" r="2" fill="white" opacity="0.6"/>
+  <circle cx="140" cy="22" r="1.5" fill="white" opacity="0.5"/>
+  <circle cx="220" cy="50" r="1.5" fill="white" opacity="0.4"/>
+  <circle cx="360" cy="30" r="2" fill="white" opacity="0.5"/>
+  <circle cx="450" cy="55" r="1.5" fill="white" opacity="0.4"/>
+  <!-- clouds -->
+  <g style="animation:cloud 12s ease-in-out infinite alternate">
+    <rect x="50" y="50" width="88" height="26" rx="13" fill="white" opacity="0.18"/>
+    <rect x="80" y="40" width="58" height="24" rx="12" fill="white" opacity="0.14"/>
+  </g>
+  <g style="animation:cloud 16s ease-in-out infinite alternate-reverse">
+    <rect x="280" y="68" width="100" height="24" rx="12" fill="white" opacity="0.13"/>
+    <rect x="320" y="58" width="64" height="22" rx="11" fill="white" opacity="0.10"/>
+  </g>
+  <!-- trash cans background -->
+  <g opacity="0.35">
+    <rect x="48" y="178" width="28" height="36" rx="4" fill="#888"/>
+    <rect x="44" y="174" width="36" height="8" rx="3" fill="#aaa"/>
+    <rect x="58" y="162" width="8" height="14" rx="2" fill="#aaa"/>
+  </g>
+  <g opacity="0.25">
+    <rect x="520" y="182" width="24" height="30" rx="3" fill="#888"/>
+    <rect x="517" y="178" width="30" height="7" rx="3" fill="#aaa"/>
+  </g>
+  <!-- fence -->
+  <rect x="0" y="204" width="600" height="6" fill="#8B6914" opacity="0.4"/>
+  <rect x="80" y="185" width="6" height="26" rx="2" fill="#8B6914" opacity="0.35"/>
+  <rect x="180" y="185" width="6" height="26" rx="2" fill="#8B6914" opacity="0.35"/>
+  <rect x="280" y="185" width="6" height="26" rx="2" fill="#8B6914" opacity="0.35"/>
+  <rect x="380" y="185" width="6" height="26" rx="2" fill="#8B6914" opacity="0.35"/>
+  <rect x="480" y="185" width="6" height="26" rx="2" fill="#8B6914" opacity="0.35"/>
+  <!-- bushes -->
+  <g style="animation:sway 4s ease-in-out infinite;transform-origin:150px 210px">
+    <ellipse cx="150" cy="206" rx="28" ry="18" fill="#2d5a1b" opacity="0.5"/>
+    <ellipse cx="136" cy="210" rx="18" ry="14" fill="#3a7a22" opacity="0.5"/>
+    <ellipse cx="164" cy="210" rx="18" ry="14" fill="#3a7a22" opacity="0.5"/>
+  </g>
+  <g style="animation:sway 3.5s ease-in-out infinite reverse;transform-origin:450px 210px">
+    <ellipse cx="450" cy="206" rx="26" ry="16" fill="#2d5a1b" opacity="0.45"/>
+    <ellipse cx="438" cy="210" rx="16" ry="12" fill="#3a7a22" opacity="0.45"/>
+    <ellipse cx="462" cy="210" rx="16" ry="12" fill="#3a7a22" opacity="0.45"/>
+  </g>
+  <!-- ground -->
+  <ellipse cx="160" cy="222" rx="26" ry="9" fill="#000" opacity="0.07"/>
+  <ellipse cx="440" cy="224" rx="20" ry="7" fill="#000" opacity="0.06"/>
+  <!-- raccoon -->
+  ${raccoonSVG}
+  </svg>`;
+}
+
+/* ── RACCOON CHARACTERS ── */
+/* All raccoons share: grey body, black mask, striped tail, white face accents */
+
+/* 1. STANDING RACCOON — upright, holding something */
+function raccoonStanding(bc,ac,mask,tail1,tail2){
+  return`<g class="raccoon-root" style="animation:bob 2s ease-in-out infinite;transform-origin:300px 175px">
+  <ellipse class="raccoon-shadow" cx="300" cy="222" rx="44" ry="8" fill="#000" opacity="0.13"/>
+  <!-- tail -->
+  <g style="animation:tailWag 1.8s ease-in-out infinite;transform-origin:266px 198px">
+    <path d="M266 198 Q240 210 220 222 Q210 230 215 236 Q222 236 236 228 Q256 216 268 202Z" fill="${tail1}" stroke="#111" stroke-width="2"/>
+    <path d="M266 198 Q242 208 224 218 Q216 224 219 230" stroke="${tail2}" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>
+    <path d="M264 200 Q244 212 228 224" stroke="${tail2}" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.5"/>
+  </g>
+  <!-- body -->
+  <ellipse cx="300" cy="188" rx="48" ry="50" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+  <!-- belly -->
+  <ellipse cx="300" cy="196" rx="28" ry="34" fill="#e8e0d4" stroke="none"/>
+  <!-- left arm holding trash lid -->
+  <g style="animation:armL 2s ease-in-out infinite;transform-origin:264px 172px">
+    <path d="M264 168 L242 160 L234 152" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <path d="M234 152 L228 146 M234 152 L228 154 M234 152 L230 158" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- trash lid -->
+    <ellipse cx="224" cy="144" rx="16" ry="6" fill="#bbb" stroke="#111" stroke-width="2"/>
+    <rect x="220" y="136" width="8" height="9" rx="3" fill="#999" stroke="#111" stroke-width="1.5"/>
+  </g>
+  <!-- right arm -->
+  <g style="animation:armR 2s ease-in-out infinite;transform-origin:336px 172px">
+    <path d="M336 168 L354 162 L362 156" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <path d="M362 156 L368 150 M362 156 L369 158 M362 156 L365 163" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- legs -->
+  <g style="animation:legL 1.8s ease-in-out infinite;transform-origin:278px 224px">
+    <path d="M270 222 Q266 234 264 248 L278 248 Q280 234 284 222Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <path d="M264 248 L256 254 M264 248 L272 254 M264 248 L278 248" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g style="animation:legR 1.8s ease-in-out infinite;transform-origin:322px 224px">
+    <path d="M316 222 Q320 234 322 248 L336 248 Q334 234 330 222Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <path d="M322 248 L314 254 M322 248 L328 254 M322 248 L336 248" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- HEAD -->
+  <g style="animation:bob 2.6s ease-in-out infinite reverse;transform-origin:300px 122px">
+    <!-- neck -->
+    <path d="M280 152 Q284 136 300 132 Q316 132 320 148Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+    <!-- head round -->
+    <circle cx="300" cy="118" r="36" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <!-- white face -->
+    <ellipse cx="300" cy="122" rx="24" ry="20" fill="#f0ebe0" stroke="none"/>
+    <!-- BLACK MASK across eyes -->
+    <path d="M268 108 Q278 102 290 106 Q300 110 310 106 Q322 102 332 108 Q328 118 318 118 Q310 120 300 118 Q290 120 282 118 Q272 118 268 108Z" fill="${mask}" stroke="#111" stroke-width="1.5"/>
+    <!-- eyes white -->
+    <circle cx="288" cy="112" r="7" fill="white" stroke="#111" stroke-width="1.5"/>
+    <circle cx="312" cy="112" r="7" fill="white" stroke="#111" stroke-width="1.5"/>
+    <!-- pupils -->
+    <circle cx="289" cy="112" r="3.5" fill="#111" style="animation:blink 3.5s ease-in-out infinite;transform-origin:289px 112px"/>
+    <circle cx="313" cy="112" r="3.5" fill="#111" style="animation:blink 3.5s ease-in-out infinite;transform-origin:313px 112px"/>
+    <!-- eye glints -->
+    <circle cx="290" cy="110" r="1.2" fill="white"/>
+    <circle cx="314" cy="110" r="1.2" fill="white"/>
+    <!-- nose -->
+    <ellipse cx="300" cy="124" rx="5" ry="3.5" fill="#222" style="animation:sniffSniff 2s ease-in-out infinite"/>
+    <!-- mouth -->
+    <path d="M294 130 Q300 135 306 130" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- ears -->
+    <g style="animation:earTwitch 4s ease-in-out infinite;transform-origin:278px 88px">
+      <path d="M270 96 Q268 78 280 72 Q290 68 292 84Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+      <path d="M273 94 Q272 80 281 76 Q288 74 289 86Z" fill="#e8b4b0" stroke="none"/>
+    </g>
+    <g style="animation:earTwitch 4.4s ease-in-out infinite reverse;transform-origin:322px 88px">
+      <path d="M330 96 Q332 78 320 72 Q310 68 308 84Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+      <path d="M327 94 Q328 80 319 76 Q312 74 311 86Z" fill="#e8b4b0" stroke="none"/>
+    </g>
+    <!-- cheek fluff -->
+    <ellipse cx="276" cy="126" rx="9" ry="6" fill="#ddd5c8" opacity="0.6"/>
+    <ellipse cx="324" cy="126" rx="9" ry="6" fill="#ddd5c8" opacity="0.6"/>
+  </g>
+</g>`;
+}
+
+/* 2. SNEAKY RACCOON — crouched, low to ground */
+function raccoonSneaky(bc,ac,mask,tail1,tail2){
+  return`<g class="raccoon-root" style="animation:bob 1.6s ease-in-out infinite;transform-origin:300px 190px">
+  <ellipse class="raccoon-shadow" cx="300" cy="224" rx="52" ry="8" fill="#000" opacity="0.13"/>
+  <!-- tail up -->
+  <g style="animation:tailWag 1.5s ease-in-out infinite;transform-origin:340px 192px">
+    <path d="M340 192 Q365 175 380 158 Q390 145 385 135 Q378 128 370 138 Q360 152 344 170 Q342 180 340 195Z" fill="${tail1}" stroke="#111" stroke-width="2"/>
+    <path d="M341 190 Q364 172 378 156 Q386 144 381 136" stroke="${tail2}" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>
+    <path d="M342 186 Q362 170 374 156" stroke="${tail2}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="0.5"/>
+  </g>
+  <!-- crouched body -->
+  <ellipse cx="300" cy="200" rx="60" ry="36" fill="${bc}" stroke="#111" stroke-width="2.5" transform="rotate(-8,300,200)"/>
+  <ellipse cx="298" cy="204" rx="38" ry="22" fill="#e8e0d4" stroke="none" transform="rotate(-8,298,204)"/>
+  <!-- paws forward -->
+  <g style="animation:armL 1.6s ease-in-out infinite;transform-origin:252px 208px">
+    <path d="M252 204 L228 212 L216 218" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <path d="M216 218 L208 222 M216 218 L212 226 M216 218 L220 224" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g style="animation:armR 1.6s ease-in-out infinite;transform-origin:254px 206px">
+    <path d="M254 202 L238 216 L228 222" stroke="#111" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.6"/>
+  </g>
+  <!-- legs tucked -->
+  <g style="animation:legL 1.4s ease-in-out infinite;transform-origin:272px 218px">
+    <path d="M268 218 Q264 228 260 238 L272 240 Q276 230 280 220Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <path d="M260 238 L252 243 M260 238 L268 242" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g style="animation:legR 1.4s ease-in-out infinite;transform-origin:316px 218px">
+    <path d="M316 218 Q318 228 320 238 L332 236 Q330 226 328 218Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <path d="M320 238 L314 243 M320 238 L328 242" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- HEAD low and forward -->
+  <g style="animation:bob 2s ease-in-out infinite reverse;transform-origin:248px 176px">
+    <path d="M264 194 Q252 184 244 172 Q240 162 248 156 Q258 152 264 166 Q268 180 268 196Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+    <circle cx="244" cy="164" r="30" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <ellipse cx="242" cy="168" rx="20" ry="18" fill="#f0ebe0" stroke="none"/>
+    <path d="M216 156 Q224 148 236 152 Q244 156 252 152 Q262 148 268 156 Q264 164 256 166 Q244 168 236 168 Q226 166 218 162 Q214 160 216 156Z" fill="${mask}" stroke="#111" stroke-width="1.5"/>
+    <circle cx="233" cy="158" r="6.5" fill="white" stroke="#111" stroke-width="1.5"/>
+    <circle cx="253" cy="158" r="6.5" fill="white" stroke="#111" stroke-width="1.5"/>
+    <circle cx="234" cy="158" r="3.2" fill="#111" style="animation:blink 2.8s ease-in-out infinite;transform-origin:234px 158px"/>
+    <circle cx="254" cy="158" r="3.2" fill="#111" style="animation:blink 2.8s ease-in-out infinite;transform-origin:254px 158px"/>
+    <circle cx="235" cy="156" r="1.2" fill="white"/>
+    <circle cx="255" cy="156" r="1.2" fill="white"/>
+    <ellipse cx="244" cy="170" rx="4.5" ry="3" fill="#222" style="animation:sniffSniff 1.8s ease-in-out infinite"/>
+    <path d="M238 176 Q244 181 250 176" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M218 150 Q216 136 226 130 Q236 126 238 140Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+    <path d="M221 148 Q220 137 228 133 Q235 130 236 142Z" fill="#e8b4b0" stroke="none"/>
+    <path d="M268 150 Q270 136 260 130 Q250 126 248 140Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+    <path d="M265 148 Q266 137 258 133 Q251 130 250 142Z" fill="#e8b4b0" stroke="none"/>
+    <ellipse cx="226" cy="172" rx="8" ry="5" fill="#ddd5c8" opacity="0.6"/>
+    <ellipse cx="262" cy="172" rx="8" ry="5" fill="#ddd5c8" opacity="0.6"/>
+  </g>
+</g>`;
+}
+
+/* 3. SITTING RACCOON — sitting up looking cute */
+function raccoonSitting(bc,ac,mask,tail1,tail2){
+  return`<g class="raccoon-root" style="animation:bob 2.2s ease-in-out infinite;transform-origin:300px 180px">
+  <ellipse class="raccoon-shadow" cx="300" cy="224" rx="46" ry="8" fill="#000" opacity="0.13"/>
+  <!-- tail wrapping around -->
+  <g style="animation:tailWag 2.2s ease-in-out infinite;transform-origin:258px 210px">
+    <path d="M258 210 Q230 220 210 230 Q198 238 204 246 Q212 248 228 238 Q250 224 260 214Z" fill="${tail1}" stroke="#111" stroke-width="2"/>
+    <path d="M258 210 Q232 219 212 229 Q201 236 205 243" stroke="${tail2}" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>
+    <!-- right side tail -->
+    <path d="M342 210 Q370 220 390 230 Q402 238 396 246 Q388 248 372 238 Q350 224 340 214Z" fill="${tail1}" stroke="#111" stroke-width="2"/>
+    <path d="M342 210 Q368 219 388 229 Q399 236 395 243" stroke="${tail2}" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>
+  </g>
+  <!-- round body sitting -->
+  <ellipse cx="300" cy="200" rx="50" ry="46" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+  <ellipse cx="300" cy="208" rx="30" ry="30" fill="#e8e0d4" stroke="none"/>
+  <!-- arms out to sides -->
+  <g style="animation:armL 2.2s ease-in-out infinite;transform-origin:260px 180px">
+    <path d="M260 176 L238 170 L226 166" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <path d="M226 166 L218 162 M226 166 L220 172 M226 166 L224 174" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g style="animation:armR 2.2s ease-in-out infinite;transform-origin:340px 180px">
+    <path d="M340 176 L362 170 L374 166" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <path d="M374 166 L382 162 M374 166 L380 172 M374 166 L376 174" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- stubby legs sitting -->
+  <path d="M272 234 Q268 244 264 252 L284 252 Q286 244 288 234Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+  <path d="M264 252 L256 257 M264 252 L272 257 M264 252 L284 252" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M328 234 Q332 244 336 252 L316 252 Q314 244 312 234Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+  <path d="M336 252 L344 257 M336 252 L328 257 M336 252 L316 252" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- big round head -->
+  <g style="animation:bob 2.8s ease-in-out infinite reverse;transform-origin:300px 118px">
+    <path d="M278 160 Q282 142 300 138 Q318 142 322 160Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+    <circle cx="300" cy="120" r="38" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <ellipse cx="300" cy="124" rx="26" ry="22" fill="#f0ebe0" stroke="none"/>
+    <path d="M266 110 Q276 103 290 107 Q300 111 310 107 Q324 103 334 110 Q330 121 320 122 Q310 124 300 122 Q290 124 280 122 Q270 121 266 110Z" fill="${mask}" stroke="#111" stroke-width="1.5"/>
+    <circle cx="288" cy="114" r="7.5" fill="white" stroke="#111" stroke-width="1.5"/>
+    <circle cx="312" cy="114" r="7.5" fill="white" stroke="#111" stroke-width="1.5"/>
+    <circle cx="289" cy="114" r="3.8" fill="#111" style="animation:blink 4s ease-in-out infinite;transform-origin:289px 114px"/>
+    <circle cx="313" cy="114" r="3.8" fill="#111" style="animation:blink 4s ease-in-out infinite;transform-origin:313px 114px"/>
+    <circle cx="290" cy="112" r="1.4" fill="white"/>
+    <circle cx="314" cy="112" r="1.4" fill="white"/>
+    <ellipse cx="300" cy="126" rx="5.5" ry="4" fill="#222" style="animation:sniffSniff 2.2s ease-in-out infinite"/>
+    <path d="M293 133 Q300 139 307 133" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- big ears -->
+    <g style="animation:earTwitch 3.8s ease-in-out infinite;transform-origin:276px 88px">
+      <path d="M268 98 Q265 78 278 70 Q290 64 294 82Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+      <path d="M271 96 Q269 80 280 74 Q289 70 291 84Z" fill="#e8b4b0" stroke="none"/>
+    </g>
+    <g style="animation:earTwitch 4.2s ease-in-out infinite reverse;transform-origin:324px 88px">
+      <path d="M332 98 Q335 78 322 70 Q310 64 306 82Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+      <path d="M329 96 Q331 80 320 74 Q311 70 309 84Z" fill="#e8b4b0" stroke="none"/>
+    </g>
+    <ellipse cx="276" cy="130" rx="10" ry="6" fill="#ddd5c8" opacity="0.65"/>
+    <ellipse cx="324" cy="130" rx="10" ry="6" fill="#ddd5c8" opacity="0.65"/>
+  </g>
+</g>`;
+}
+
+/* 4. RUNNING RACCOON */
+function raccoonRunning(bc,ac,mask,tail1,tail2){
+  return`<g class="raccoon-root" style="animation:bob 1.2s ease-in-out infinite;transform-origin:300px 185px">
+  <ellipse class="raccoon-shadow" cx="300" cy="224" rx="40" ry="7" fill="#000" opacity="0.12"/>
+  <!-- tail streaming behind -->
+  <g style="animation:tailWag 1.2s ease-in-out infinite reverse;transform-origin:335px 192px">
+    <path d="M335 192 Q365 180 392 168 Q408 158 405 146 Q398 138 388 148 Q372 164 348 178 Q340 186 336 196Z" fill="${tail1}" stroke="#111" stroke-width="2"/>
+    <path d="M336 190 Q364 178 390 166 Q404 157 401 147" stroke="${tail2}" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>
+    <path d="M337 186 Q362 175 386 164" stroke="${tail2}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="0.5"/>
+  </g>
+  <!-- body leaning forward -->
+  <ellipse cx="296" cy="192" rx="52" ry="38" fill="${bc}" stroke="#111" stroke-width="2.5" transform="rotate(-18,296,192)"/>
+  <ellipse cx="296" cy="196" rx="32" ry="24" fill="#e8e0d4" stroke="none" transform="rotate(-18,296,196)"/>
+  <!-- arms pumping -->
+  <g style="animation:armL 0.9s ease-in-out infinite;transform-origin:268px 174px">
+    <path d="M270 170 L248 158 L236 150" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <path d="M236 150 L228 144 M236 150 L232 158" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g style="animation:armR 0.9s ease-in-out infinite;transform-origin:268px 174px">
+    <path d="M268 172 L258 188 L250 198" stroke="#111" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.7"/>
+  </g>
+  <!-- legs running -->
+  <g style="animation:legL 0.85s ease-in-out infinite;transform-origin:278px 215px">
+    <path d="M272 212 Q264 224 256 238 L268 242 Q276 228 284 216Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <path d="M256 242 L246 246 M256 242 L264 248" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g style="animation:legR 0.85s ease-in-out infinite;transform-origin:310px 215px">
+    <path d="M308 212 Q318 222 328 234 L318 240 Q308 228 300 216Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <path d="M328 234 L338 240 M328 234 L322 242" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- head forward -->
+  <g style="animation:bob 1.5s ease-in-out infinite reverse;transform-origin:258px 152px">
+    <path d="M270 178 Q258 164 250 150 Q246 140 254 134 Q264 130 268 144 Q272 160 274 178Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+    <circle cx="252" cy="140" r="32" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <ellipse cx="250" cy="144" rx="22" ry="19" fill="#f0ebe0" stroke="none"/>
+    <path d="M224 132 Q232 124 244 128 Q252 132 262 128 Q272 124 278 132 Q274 142 266 143 Q252 146 244 145 Q234 144 226 140 Q222 138 224 132Z" fill="${mask}" stroke="#111" stroke-width="1.5"/>
+    <circle cx="240" cy="134" r="6.5" fill="white" stroke="#111" stroke-width="1.5"/>
+    <circle cx="262" cy="134" r="6.5" fill="white" stroke="#111" stroke-width="1.5"/>
+    <circle cx="241" cy="134" r="3.2" fill="#111" style="animation:blink 2.4s ease-in-out infinite;transform-origin:241px 134px"/>
+    <circle cx="263" cy="134" r="3.2" fill="#111" style="animation:blink 2.4s ease-in-out infinite;transform-origin:263px 134px"/>
+    <circle cx="242" cy="132" r="1.2" fill="white"/>
+    <circle cx="264" cy="132" r="1.2" fill="white"/>
+    <ellipse cx="251" cy="148" rx="4.5" ry="3" fill="#222" style="animation:sniffSniff 1.4s ease-in-out infinite"/>
+    <path d="M245 154 Q251 159 257 154" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M226 126 Q224 112 234 106 Q244 102 246 116Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+    <path d="M229 124 Q228 113 236 109 Q243 106 244 118Z" fill="#e8b4b0" stroke="none"/>
+    <path d="M274 126 Q276 112 266 106 Q256 102 254 116Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+    <path d="M271 124 Q272 113 264 109 Q257 106 256 118Z" fill="#e8b4b0" stroke="none"/>
+    <ellipse cx="234" cy="150" rx="8" ry="5" fill="#ddd5c8" opacity="0.6"/>
+    <ellipse cx="268" cy="150" rx="8" ry="5" fill="#ddd5c8" opacity="0.6"/>
+  </g>
+</g>`;
+}
+
+/* 5. CLIMBING RACCOON — going up */
+function raccoonClimbing(bc,ac,mask,tail1,tail2){
+  return`<g class="raccoon-root" style="animation:bob 2.4s ease-in-out infinite;transform-origin:300px 175px">
+  <ellipse class="raccoon-shadow" cx="300" cy="224" rx="36" ry="7" fill="#000" opacity="0.11"/>
+  <!-- pole/tree -->
+  <rect x="294" y="60" width="12" height="165" rx="6" fill="#8B6914" opacity="0.5"/>
+  <!-- tail -->
+  <g style="animation:tailWag 2.4s ease-in-out infinite;transform-origin:316px 188px">
+    <path d="M316 188 Q345 195 368 202 Q382 208 380 218 Q374 224 360 216 Q340 206 318 196Z" fill="${tail1}" stroke="#111" stroke-width="2"/>
+    <path d="M317 186 Q344 193 366 200 Q379 206 377 215" stroke="${tail2}" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>
+  </g>
+  <!-- body gripping pole -->
+  <ellipse cx="302" cy="185" rx="42" ry="46" fill="${bc}" stroke="#111" stroke-width="2.5" transform="rotate(5,302,185)"/>
+  <ellipse cx="302" cy="192" rx="26" ry="30" fill="#e8e0d4" stroke="none" transform="rotate(5,302,192)"/>
+  <!-- arms gripping -->
+  <g style="animation:armL 2.4s ease-in-out infinite;transform-origin:268px 160px">
+    <path d="M270 156 L280 140 L294 132" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <path d="M294 132 L302 128 M294 132 L288 126 M294 132 L290 138" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g style="animation:armR 2.4s ease-in-out infinite;transform-origin:334px 160px">
+    <path d="M332 158 L322 142 L308 134" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <path d="M308 134 L302 130 M308 134 L314 128 M308 134 L312 140" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- legs -->
+  <g style="animation:legL 2s ease-in-out infinite;transform-origin:278px 218px">
+    <path d="M272 216 Q268 226 266 238 L278 240 Q280 228 284 218Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <path d="M266 238 L258 243 M266 238 L274 243" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g style="animation:legR 2s ease-in-out infinite;transform-origin:322px 218px">
+    <path d="M320 216 Q322 226 324 238 L336 236 Q334 226 330 216Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <path d="M324 238 L318 243 M324 238 L332 243" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- HEAD looking up -->
+  <g style="animation:bob 3s ease-in-out infinite reverse;transform-origin:300px 115px">
+    <path d="M280 150 Q284 132 300 128 Q316 132 320 150Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+    <circle cx="300" cy="112" r="35" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <ellipse cx="300" cy="116" rx="23" ry="20" fill="#f0ebe0" stroke="none"/>
+    <path d="M268 102 Q278 95 292 99 Q300 103 308 99 Q322 95 332 102 Q328 113 318 114 Q308 116 300 114 Q292 116 282 114 Q272 113 268 102Z" fill="${mask}" stroke="#111" stroke-width="1.5"/>
+    <circle cx="287" cy="106" r="7" fill="white" stroke="#111" stroke-width="1.5"/>
+    <circle cx="313" cy="106" r="7" fill="white" stroke="#111" stroke-width="1.5"/>
+    <circle cx="288" cy="106" r="3.5" fill="#111" style="animation:blink 3.8s ease-in-out infinite;transform-origin:288px 106px"/>
+    <circle cx="314" cy="106" r="3.5" fill="#111" style="animation:blink 3.8s ease-in-out infinite;transform-origin:314px 106px"/>
+    <circle cx="289" cy="104" r="1.3" fill="white"/>
+    <circle cx="315" cy="104" r="1.3" fill="white"/>
+    <ellipse cx="300" cy="118" rx="5" ry="3.5" fill="#222" style="animation:sniffSniff 2.4s ease-in-out infinite"/>
+    <path d="M294 125 Q300 130 306 125" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <g style="animation:earTwitch 4s ease-in-out infinite;transform-origin:278px 82px">
+      <path d="M270 90 Q267 72 280 64 Q291 58 294 76Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+      <path d="M273 88 Q271 74 281 68 Q289 65 291 78Z" fill="#e8b4b0" stroke="none"/>
+    </g>
+    <g style="animation:earTwitch 4.6s ease-in-out infinite reverse;transform-origin:322px 82px">
+      <path d="M330 90 Q333 72 320 64 Q309 58 306 76Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+      <path d="M327 88 Q329 74 319 68 Q311 65 309 78Z" fill="#e8b4b0" stroke="none"/>
+    </g>
+    <ellipse cx="277" cy="122" rx="9" ry="5.5" fill="#ddd5c8" opacity="0.6"/>
+    <ellipse cx="323" cy="122" rx="9" ry="5.5" fill="#ddd5c8" opacity="0.6"/>
+  </g>
+</g>`;
+}
+
+/* 6. RACCOON WITH FOOD — holding pizza slice */
+function raccoonFood(bc,ac,mask,tail1,tail2){
+  return`<g class="raccoon-root" style="animation:bob 2s ease-in-out infinite;transform-origin:300px 180px">
+  <ellipse class="raccoon-shadow" cx="300" cy="222" rx="46" ry="8" fill="#000" opacity="0.13"/>
+  <g style="animation:tailWag 2s ease-in-out infinite;transform-origin:262px 196px">
+    <path d="M262 196 Q236 208 216 220 Q204 228 210 236 Q218 238 234 228 Q256 214 264 200Z" fill="${tail1}" stroke="#111" stroke-width="2"/>
+    <path d="M262 196 Q238 207 218 219 Q207 226 211 233" stroke="${tail2}" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>
+  </g>
+  <!-- body -->
+  <ellipse cx="300" cy="188" rx="48" ry="50" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+  <ellipse cx="300" cy="196" rx="28" ry="34" fill="#e8e0d4" stroke="none"/>
+  <!-- left arm holding pizza -->
+  <g style="animation:armL 2s ease-in-out infinite;transform-origin:264px 168px">
+    <path d="M264 164 L244 154 L232 148" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <!-- pizza slice -->
+    <path d="M210 132 L232 148 L228 162 Z" fill="#F4A460" stroke="#111" stroke-width="2"/>
+    <path d="M210 132 L232 148" stroke="#FF6B35" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="224" cy="146" r="3" fill="#CC2200"/>
+    <circle cx="218" cy="152" r="2.5" fill="#CC2200"/>
+    <circle cx="228" cy="154" r="2" fill="#CC2200"/>
+    <path d="M210 132 L228 162" stroke="#D4A017" stroke-width="2" opacity="0.5"/>
+  </g>
+  <!-- right arm -->
+  <g style="animation:armR 2s ease-in-out infinite;transform-origin:336px 168px">
+    <path d="M336 164 L356 158 L366 154" stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <path d="M366 154 L374 150 M366 154 L372 160 M366 154 L368 162" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- legs -->
+  <g style="animation:legL 1.9s ease-in-out infinite;transform-origin:278px 224px">
+    <path d="M270 222 Q266 234 264 248 L278 248 Q280 234 284 222Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <path d="M264 248 L256 254 M264 248 L272 254 M264 248 L278 248" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g style="animation:legR 1.9s ease-in-out infinite;transform-origin:322px 224px">
+    <path d="M316 222 Q320 234 322 248 L336 248 Q334 234 330 222Z" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <path d="M322 248 L314 254 M322 248 L328 254 M322 248 L336 248" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- head -->
+  <g style="animation:bob 2.5s ease-in-out infinite reverse;transform-origin:300px 120px">
+    <path d="M280 152 Q284 136 300 132 Q316 136 320 152Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+    <circle cx="300" cy="118" r="36" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <ellipse cx="300" cy="122" rx="24" ry="20" fill="#f0ebe0" stroke="none"/>
+    <path d="M266 108 Q276 101 290 105 Q300 109 310 105 Q324 101 334 108 Q330 119 320 120 Q310 122 300 120 Q290 122 280 120 Q270 119 266 108Z" fill="${mask}" stroke="#111" stroke-width="1.5"/>
+    <circle cx="288" cy="112" r="7" fill="white" stroke="#111" stroke-width="1.5"/>
+    <circle cx="312" cy="112" r="7" fill="white" stroke="#111" stroke-width="1.5"/>
+    <circle cx="289" cy="112" r="3.5" fill="#111" style="animation:blink 3.2s ease-in-out infinite;transform-origin:289px 112px"/>
+    <circle cx="313" cy="112" r="3.5" fill="#111" style="animation:blink 3.2s ease-in-out infinite;transform-origin:313px 112px"/>
+    <circle cx="290" cy="110" r="1.2" fill="white"/>
+    <circle cx="314" cy="110" r="1.2" fill="white"/>
+    <!-- happy open mouth with little tongue -->
+    <path d="M290 128 Q300 136 310 128" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="300" cy="131" rx="6" ry="4" fill="#cc4444"/>
+    <ellipse cx="300" cy="133" rx="4" ry="2.5" fill="#ff6666"/>
+    <ellipse cx="300" cy="122" rx="5" ry="3.5" fill="#222" style="animation:sniffSniff 1.6s ease-in-out infinite"/>
+    <g style="animation:earTwitch 3.6s ease-in-out infinite;transform-origin:278px 88px">
+      <path d="M270 96 Q267 78 280 70 Q291 64 294 82Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+      <path d="M273 94 Q271 80 281 74 Q289 71 291 84Z" fill="#e8b4b0" stroke="none"/>
+    </g>
+    <g style="animation:earTwitch 4s ease-in-out infinite reverse;transform-origin:322px 88px">
+      <path d="M330 96 Q333 78 320 70 Q309 64 306 82Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+      <path d="M327 94 Q329 80 319 74 Q311 71 309 84Z" fill="#e8b4b0" stroke="none"/>
+    </g>
+    <ellipse cx="276" cy="128" rx="10" ry="6" fill="#ddd5c8" opacity="0.65"/>
+    <ellipse cx="324" cy="128" rx="10" ry="6" fill="#ddd5c8" opacity="0.65"/>
+  </g>
+</g>`;
+}
+
+/* 7. SLEEPING RACCOON — curled up */
+function raccoonSleeping(bc,ac,mask,tail1,tail2){
+  return`<g class="raccoon-root" style="animation:bob 3s ease-in-out infinite;transform-origin:300px 200px">
+  <ellipse class="raccoon-shadow" cx="300" cy="226" rx="60" ry="9" fill="#000" opacity="0.12"/>
+  <!-- curled body -->
+  <ellipse cx="300" cy="208" rx="72" ry="34" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+  <ellipse cx="300" cy="212" rx="52" ry="22" fill="#e8e0d4" stroke="none"/>
+  <!-- tail wrapped over body -->
+  <path d="M235 194 Q214 186 208 196 Q205 208 218 212 Q238 216 264 208 Q282 204 300 208 Q318 212 336 208 Q358 202 370 210 Q378 218 366 222 Q346 226 320 218 Q300 214 280 218 Q256 224 238 218 Q220 214 220 204 Q220 196 235 194Z" fill="${tail1}" stroke="#111" stroke-width="2"/>
+  <path d="M236 196 Q218 190 212 198 Q210 206 220 210" stroke="${tail2}" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M364 208 Q374 215 368 221 Q354 226 330 218" stroke="${tail2}" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <!-- paws tucked -->
+  <path d="M240 208 L224 216 L218 224" stroke="#111" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <path d="M218 224 L212 228 M218 224 L214 232" stroke="#111" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <!-- HEAD resting -->
+  <g style="animation:bob 3.5s ease-in-out infinite reverse;transform-origin:248px 192px">
+    <circle cx="248" cy="192" r="34" fill="${bc}" stroke="#111" stroke-width="2.5"/>
+    <ellipse cx="246" cy="196" rx="22" ry="19" fill="#f0ebe0" stroke="none"/>
+    <path d="M218 184 Q227 177 240 180 Q248 184 256 180 Q268 177 274 184 Q270 194 262 195 Q248 198 240 196 Q230 195 222 192 Q216 190 218 184Z" fill="${mask}" stroke="#111" stroke-width="1.5"/>
+    <!-- closed sleeping eyes -->
+    <path d="M232 186 Q238 182 244 186" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M252 186 Q258 182 264 186" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <!-- zzz -->
+    <text x="278" y="170" font-size="14" fill="#666" font-weight="bold" opacity="0.7" style="animation:bob 3s ease-in-out infinite">z</text>
+    <text x="290" y="158" font-size="11" fill="#666" font-weight="bold" opacity="0.5">z</text>
+    <text x="300" y="148" font-size="8" fill="#666" font-weight="bold" opacity="0.35">z</text>
+    <ellipse cx="248" cy="200" rx="5" ry="3.5" fill="#222" opacity="0.5"/>
+    <!-- tiny smile while sleeping -->
+    <path d="M242 206 Q248 210 254 206" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <g style="animation:earTwitch 5s ease-in-out infinite;transform-origin:226px 164px">
+      <path d="M218 172 Q215 156 227 149 Q238 144 240 160Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+      <path d="M221 170 Q219 157 228 152 Q236 149 237 163Z" fill="#e8b4b0" stroke="none"/>
+    </g>
+    <path d="M268 172 Q271 157 260 150 Q249 146 248 160Z" fill="${bc}" stroke="#111" stroke-width="2"/>
+    <path d="M265 170 Q267 158 258 152 Q250 149 250 162Z" fill="#e8b4b0" stroke="none"/>
+    <ellipse cx="228" cy="200" rx="9" ry="5" fill="#ddd5c8" opacity="0.6"/>
+    <ellipse cx="268" cy="200" rx="9" ry="5" fill="#ddd5c8" opacity="0.6"/>
+  </g>
+</g>`;
+}
+
+/* ── DATA ── */
+const RACCOON_FNS = [
+  raccoonStanding, raccoonSneaky, raccoonSitting,
+  raccoonRunning, raccoonClimbing, raccoonFood, raccoonSleeping
+];
+
+/* body color, accent, mask, tail stripe1, tail stripe2 */
+const RACCOON_STYLES = [
+  {bc:'#9E9E9E',ac:'#616161',mask:'#212121',tail1:'#9E9E9E',tail2:'#212121'}, // classic grey
+  {bc:'#8D6E63',ac:'#5D4037',mask:'#1a1a1a',tail1:'#8D6E63',tail2:'#2d2d2d'}, // brown
+  {bc:'#78909C',ac:'#455A64',mask:'#1a1a1a',tail1:'#78909C',tail2:'#1a1a1a'}, // blue-grey
+  {bc:'#A5D6A7',ac:'#388E3C',mask:'#1B5E20',tail1:'#A5D6A7',tail2:'#1B5E20'}, // green
+  {bc:'#CE93D8',ac:'#7B1FA2',mask:'#4A148C',tail1:'#CE93D8',tail2:'#4A148C'}, // purple
+  {bc:'#FFCC80',ac:'#E65100',mask:'#3E2723',tail1:'#FFCC80',tail2:'#3E2723'}, // orange
+  {bc:'#F48FB1',ac:'#C2185B',mask:'#880E4F',tail1:'#F48FB1',tail2:'#880E4F'}, // pink
+  {bc:'#80DEEA',ac:'#0097A7',mask:'#006064',tail1:'#80DEEA',tail2:'#006064'}, // teal
+  {bc:'#EF9A9A',ac:'#C62828',mask:'#4a1a1a',tail1:'#EF9A9A',tail2:'#4a1a1a'}, // red
+];
+
+const DAYS_DATA = [
+  {label:'Mon 27', date:'Monday, Apr 27',   name:'The Dumpster Diver',    sky:['#1a1a2e','#16213e'], ground:'#2d4a1e', styleIdx:0, fnIdx:0},
+  {label:'Tue 28', date:'Tuesday, Apr 28',  name:'The Midnight Bandit',   sky:['#0d1b2a','#1b263b'], ground:'#1a3a0a', styleIdx:2, fnIdx:1},
+  {label:'Wed 29', date:'Wednesday, Apr 29',name:'The Wash Station Chef', sky:['#2c1654','#3d1a6e'], ground:'#1a2a0a', styleIdx:4, fnIdx:2},
+  {label:'Thu 30', date:'Thursday, Apr 30', name:'The Urban Sprinter',    sky:['#1a0a00','#2d1200'], ground:'#2a1a00', styleIdx:5, fnIdx:3},
+  {label:'Fri 1',  date:'Friday, May 1',    name:'The Roof Climber',      sky:['#0a1628','#152238'], ground:'#0a2a1a', styleIdx:1, fnIdx:4},
+  {label:'Sat 2',  date:'Saturday, May 2',  name:'The Pizza Thief',       sky:['#1a0a2a','#2d1245'], ground:'#1a2a0a', styleIdx:6, fnIdx:5},
+  {label:'Sun 3',  date:'Sunday, May 3',    name:'The Trash Napper',      sky:['#0d0d1a','#1a1a2e'], ground:'#0a1a00', styleIdx:7, fnIdx:6},
+];
+
+const FACTS = [
+  'Raccoons can unlock complex locks, latches, and even jar lids — their nimble front paws have the dexterity of a 5-year-old human child. No trash can is truly safe.',
+  'Raccoons don\'t actually "wash" their food. They wet their paws to enhance the sensitivity of touch receptors — they\'re basically doing a sensory investigation of every meal.',
+  'A group of raccoons is called a "nursery" or a "gaze." They have no fixed home and may sleep in a different spot every night — true urban nomads.',
+  'Raccoons can run up to 15 mph and are excellent swimmers. They can also open doors, unscrew lids, and remember solutions to puzzles for up to 3 years.',
+  'Raccoons are one of the few mammals that regularly live in cities. Urban raccoons have been shown to be significantly smarter than their rural cousins — city life sharpens the mind.',
+  'Raccoons will eat almost anything: insects, fruit, eggs, small animals, and yes — your pizza. They consume up to 35% of their body weight in autumn to prepare for winter.',
+  'Raccoons sleep up to 16 hours a day in winter but don\'t truly hibernate. They wake up on warm nights to raid kitchens, birdfeeders, and unattended snacks without remorse.',
+];
+
+const SUFFIXES = ['coon','bandit','paws','mask','trash','washer','sneak','napper','scavenger','rascal'];
+const PREFIXES = ['Sneaky','Masked','Midnight','Urban','Crafty','Trash','Shadow','Nimble','Fuzzy','Dumpster'];
+const TRAITS   = ['master of the recycling bin','feared by all trash cans','apex snack liberator','lock-pick extraordinaire','pizza slice hunter','midnight kitchen raider','champion dumpster diver','legendary lid unscrew-er'];
+
+let currentDay = 0;
+
+function buildDayNav(){
+  const nav=document.getElementById('dayNav'); nav.innerHTML='';
+  DAYS_DATA.forEach((d,i)=>{
+    const btn=document.createElement('button');
+    btn.className='day-pill'+(i===currentDay?' active':'');
+    btn.textContent=d.label;
+    btn.onclick=()=>{currentDay=i;animateFact();};
+    nav.appendChild(btn);
+  });
+}
+
+function renderFact(){
+  const d=DAYS_DATA[currentDay];
+  const st=RACCOON_STYLES[d.styleIdx];
+  const fn=RACCOON_FNS[d.fnIdx];
+  document.getElementById('factDate').textContent=d.date;
+  document.getElementById('factRaccoonName').textContent=d.name;
+  document.getElementById('factText').textContent=FACTS[currentDay];
+  const wrap=document.getElementById('sceneWrap');
+  wrap.innerHTML=`<span class="hint-badge">Click anywhere to levitate! 🦝</span>`;
+  wrap.insertAdjacentHTML('afterbegin',scene(d.sky[0],d.sky[1],d.ground,fn(st.bc,st.ac,st.mask,st.tail1,st.tail2),'main'));
+  document.getElementById('prevBtn').disabled=currentDay===0;
+  document.getElementById('nextBtn').disabled=currentDay===DAYS_DATA.length-1;
+  buildDayNav();
+  initPhysics('main');
+  const svgEl=wrap.querySelector('svg');
+  if(svgEl)startLoop('main',svgEl);
+  attachPhysics(wrap,'main');
+}
+
+function animateFact(){
+  const card=document.getElementById('factCard');
+  card.classList.add('fade-out');
+  if(rafLoops['main'])cancelAnimationFrame(rafLoops['main']);
+  setTimeout(()=>{renderFact();card.classList.remove('fade-out');},260);
+}
+
+function changeDay(dir){currentDay=Math.max(0,Math.min(DAYS_DATA.length-1,currentDay+dir));animateFact();}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['facts','builder'][i]===tab));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+}
+
+function hashName(n){let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))&0xffffffff;return Math.abs(h);}
+
+function buildRaccoon(){
+  const raw=document.getElementById('nameInput').value.trim(); if(!raw)return;
+  const h=hashName(raw.toLowerCase());
+  const d=DAYS_DATA[h%DAYS_DATA.length];
+  const st=RACCOON_STYLES[(h>>6)%RACCOON_STYLES.length];
+  const fn=RACCOON_FNS[(h>>3)%RACCOON_FNS.length];
+  const suffix=SUFFIXES[h%SUFFIXES.length];
+  const prefix=PREFIXES[(h>>4)%PREFIXES.length];
+  const base=raw.charAt(0).toUpperCase()+raw.slice(1).toLowerCase();
+  const fullTitle=prefix+' '+base+' the '+suffix.charAt(0).toUpperCase()+suffix.slice(1);
+  const trait=TRAITS[(h>>8)%TRAITS.length];
+  document.getElementById('resultName').textContent=fullTitle;
+  document.getElementById('resultTitle').textContent=raw+' — '+trait;
+  const wrap=document.getElementById('resultScene');
+  const sid='builder-'+raw;
+  wrap.innerHTML=scene(d.sky[0],d.sky[1],d.ground,fn(st.bc,st.ac,st.mask,st.tail1,st.tail2),sid);
+  document.getElementById('resultFact').textContent=`${fullTitle} prowls the urban jungle as a ${trait}. Their distinctive markings have made them the most recognizable bandit on the block.`;
+  const ra=document.getElementById('resultArea');
+  ra.classList.add('show');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    ra.classList.add('animate');
+    initPhysics(sid);
+    const svgEl=wrap.querySelector('svg');
+    if(svgEl)startLoop(sid,svgEl);
+    attachPhysics(wrap,sid);
+  }));
+}
+
+renderFact();
+</script>
+</body>
+</html>
